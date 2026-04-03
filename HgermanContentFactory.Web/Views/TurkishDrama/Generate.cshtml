@@ -1,0 +1,224 @@
+@using HgermanContentFactory.Core.DTOs
+@using HgermanContentFactory.Core.Enums
+@model TurkishDramaGenerateRequest
+@{
+    ViewData["Title"] = "Generate Drama Content";
+    var knownSeries  = (List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.KnownSeries;
+    var languages    = (List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Languages;
+    var channels     = (List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Channels;
+
+    // Pre-fill from trend analyzer click
+    var preSeriesRaw = Context.Request.Query["series"].ToString();
+    var preSceneRaw  = Context.Request.Query["scene"].ToString();
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-magic me-2 text-primary"></i>Generate Drama Content</h4>
+        <p class="text-muted mb-0">AI-powered scripts, titles, hashtags &amp; descriptions</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@e.ErrorMessage</div>
+        }
+    </div>
+}
+
+<div class="row g-4">
+    <!-- Single language form -->
+    <div class="col-lg-6">
+        <div class="card p-4">
+            <h6 class="mb-3"><i class="bi bi-translate me-2"></i>Single Language</h6>
+            <form asp-action="Generate" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Drama Series</label>
+                    <select name="DramaSeries" class="form-select" id="seriesSelect" required>
+                        <option value="">Select or type below...</option>
+                        @foreach (var s in knownSeries)
+                        {
+                            if (s.Value == preSeriesRaw)
+                            {
+                                <option value="@s.Value" selected>@s.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@s.Value">@s.Text</option>
+                            }
+                        }
+                        <option value="__custom__">✏️ Other (type below)</option>
+                    </select>
+                    <input type="text" id="customSeries" name="DramaSeriesCustom"
+                           class="form-control mt-2 d-none"
+                           placeholder="Type custom series name..." />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Scene / Emotional Beat</label>
+                    <input type="text" name="SceneOrEmotion" class="form-control" required
+                           value="@preSceneRaw"
+                           placeholder="e.g. 'He discovers her secret' or 'Tearful goodbye'" />
+                    <div class="form-text text-muted">Be specific — the more vivid, the better the script.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Target Language</label>
+                    <select name="Language" class="form-select" required>
+                        @foreach (var l in languages)
+                        {
+                            if (l.Selected)
+                            {
+                                <option value="@l.Value" selected>@l.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@l.Value">@l.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Save to Channel (optional)</label>
+                    <select name="ChannelId" class="form-select">
+                        <option value="">Don't save — preview only</option>
+                        @foreach (var c in channels)
+                        {
+                            <option value="@c.Value">@c.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="AutoSave" value="true" id="autoSave" />
+                    <label class="form-check-label small" for="autoSave">
+                        Auto-save as ScriptReady video
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="generateBtn">
+                    <i class="bi bi-magic me-1"></i> Generate Content
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk (6 languages) form -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100 d-flex flex-column">
+            <h6 class="mb-3"><i class="bi bi-globe me-2"></i>Bulk — All 6 Languages</h6>
+            <p class="text-muted small">Generate content for ES · FR · DE · IT · PL · EN simultaneously.</p>
+
+            <form asp-action="GenerateBulk" method="post" class="flex-grow-1 d-flex flex-column">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Drama Series</label>
+                    <select name="dramaSeries" class="form-select" id="bulkSeriesSelect" required>
+                        <option value="">Select series...</option>
+                        @foreach (var s in knownSeries)
+                        {
+                            if (s.Value == preSeriesRaw)
+                            {
+                                <option value="@s.Value" selected>@s.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@s.Value">@s.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Scene / Emotional Beat</label>
+                    <input type="text" name="sceneOrEmotion" class="form-control" required
+                           value="@preSceneRaw"
+                           placeholder="e.g. 'The kiss they almost had'" />
+                </div>
+
+                <!-- Language badges -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    @foreach (var l in languages)
+                    {
+                        <span class="badge bg-secondary">@l.Text</span>
+                    }
+                </div>
+
+                <div class="alert alert-warning small py-2 mb-3">
+                    <i class="bi bi-clock me-1"></i>
+                    Bulk generation calls Claude 6 times — may take ~30–60 seconds.
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 mt-auto" id="bulkBtn">
+                    <i class="bi bi-globe me-1"></i> Generate All 6 Languages
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Example prompts -->
+<div class="card p-3 mt-4">
+    <h6 class="mb-3 text-muted small">💡 Prompt ideas that go viral</h6>
+    <div class="d-flex flex-wrap gap-2">
+        @foreach (var idea in new[] {
+            "He discovers she's been lying all along",
+            "She walks away and he doesn't stop her",
+            "The moment she realizes she loves him",
+            "Their first meeting — fate or accident?",
+            "He sacrifices everything for her",
+            "The goodbye they never got to say",
+            "She forgives him — but is it too late?",
+            "The betrayal that broke them apart",
+        })
+        {
+            <button class="btn btn-outline-secondary btn-sm idea-btn" data-idea="@idea">
+                @idea
+            </button>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// Custom series toggle
+document.getElementById('seriesSelect').addEventListener('change', function() {
+    const custom = document.getElementById('customSeries');
+    if (this.value === '__custom__') {
+        custom.classList.remove('d-none');
+        custom.required = true;
+    } else {
+        custom.classList.add('d-none');
+        custom.required = false;
+    }
+});
+
+// Idea buttons fill scene inputs
+document.querySelectorAll('.idea-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('[name="SceneOrEmotion"], [name="sceneOrEmotion"]')
+            .forEach(el => el.value = this.dataset.idea);
+    });
+});
+
+// Loading state on submit
+['generate', 'bulk'].forEach(prefix => {
+    const btn = document.getElementById(prefix + 'Btn');
+    if (!btn) return;
+    btn.closest('form').addEventListener('submit', function() {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+    });
+});
+</script>
+}

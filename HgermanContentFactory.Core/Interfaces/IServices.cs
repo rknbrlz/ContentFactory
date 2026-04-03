@@ -78,3 +78,17 @@ public interface ISchedulerService
     Task EnqueueDueVideosAsync();
     Task ProcessScheduledPublishAsync(int videoId);
 }
+
+// ── Turkish Drama Service ──────────────────────────────────────────────────
+
+public interface ITurkishDramaService
+{
+    /// <summary>Returns trending Turkish drama topics for the given language market.</summary>
+    Task<List<TurkishDramaTrendDto>> GetTrendingDramasAsync(ContentLanguage language);
+
+    /// <summary>Generates a full short-video content package for one drama topic.</summary>
+    Task<TurkishDramaContentDto> GenerateContentAsync(TurkishDramaGenerateRequest request);
+
+    /// <summary>Generates content for all 6 languages at once (bulk).</summary>
+    Task<List<TurkishDramaContentDto>> GenerateBulkAsync(string dramaSeries, string sceneOrEmotion);
+}

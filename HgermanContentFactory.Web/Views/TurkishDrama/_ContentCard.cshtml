@@ -1,0 +1,175 @@
+@using HgermanContentFactory.Core.DTOs
+@model TurkishDramaContentDto
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle me-2"></i>
+        Generation failed for @Model.LanguageName: @Model.ErrorMessage
+    </div>
+}
+else
+{
+    <div class="content-block">
+        <div class="row g-3">
+            <!-- Title + Hook -->
+            <div class="col-12">
+                <div class="card p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="text-muted small mb-1">📌 Title</div>
+                            <div class="fw-semibold fs-6" id="title-@Model.Language">@Model.Title</div>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm ms-2 flex-shrink-0"
+                                onclick="copyField(this, document.getElementById('title-@Model.Language').innerText)">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Hook))
+                    {
+                        <hr class="my-2" />
+                        <div class="text-muted small mb-1">⚡ Hook (first 3 seconds)</div>
+                        <div class="text-info fst-italic">@Model.Hook</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Script -->
+            <div class="col-md-7">
+                <div class="card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="text-muted small">🎬 Script</div>
+                        <button class="btn btn-outline-secondary btn-sm"
+                                onclick="copyField(this, document.getElementById('script-@Model.Language').innerText)">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <div id="script-@Model.Language"
+                         style="white-space:pre-wrap;font-size:.9rem;line-height:1.7">@Model.Script</div>
+                    @if (!string.IsNullOrEmpty(Model.CallToAction))
+                    {
+                        <hr class="my-2" />
+                        <div class="text-muted small mb-1">📣 Call to Action</div>
+                        <div class="text-warning small">@Model.CallToAction</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Right column: description + hashtags + actions -->
+            <div class="col-md-5 d-flex flex-column gap-3">
+                <!-- Description -->
+                <div class="card p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="text-muted small">📝 Description</div>
+                        <button class="btn btn-outline-secondary btn-sm"
+                                onclick="copyField(this, document.getElementById('desc-@Model.Language').innerText)">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <div id="desc-@Model.Language" style="font-size:.85rem">@Model.Description</div>
+                </div>
+
+                <!-- Hashtags -->
+                <div class="card p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="text-muted small"># Hashtags</div>
+                        <button class="btn btn-outline-secondary btn-sm"
+                                onclick="copyField(this, document.getElementById('hash-@Model.Language').innerText)">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <div id="hash-@Model.Language" class="d-flex flex-wrap gap-1">
+                        @foreach (var tag in (Model.Hashtags ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            <span class="badge bg-secondary" style="font-size:.7rem">@tag</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Save to channel -->
+                @if (Model.SavedVideoId.HasValue)
+                {
+                    <div class="alert alert-success py-2 mb-0 small">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Saved as Video #@Model.SavedVideoId
+                        <a href="/Videos/Details/@Model.SavedVideoId" class="alert-link ms-1">View →</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="card p-3">
+                        <div class="text-muted small mb-2">💾 Save to Channel</div>
+                        <select class="form-select form-select-sm mb-2 channel-select" data-lang="@((int)Model.Language)">
+                            <option value="">Select channel...</option>
+                        </select>
+                        <button class="btn btn-outline-primary btn-sm w-100 save-btn"
+                                data-lang="@((int)Model.Language)"
+                                data-series="@Model.DramaSeries"
+                                data-scene="@Model.SceneOrEmotion"
+                                onclick="saveVideo(this)">
+                            <i class="bi bi-floppy me-1"></i> Save as ScriptReady
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+// Populate channel dropdowns
+(async function() {
+    try {
+        const resp = await fetch('/Channels/GetList');
+        if (!resp.ok) return;
+        const channels = await resp.json();
+        document.querySelectorAll('.channel-select').forEach(sel => {
+            channels.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = `${c.name} (${c.languageName})`;
+                sel.appendChild(opt);
+            });
+        });
+    } catch(e) {}
+})();
+
+async function saveVideo(btn) {
+    const lang    = parseInt(btn.dataset.lang);
+    const series  = btn.dataset.series;
+    const scene   = btn.dataset.scene;
+    const sel     = btn.parentElement.querySelector('.channel-select');
+    const channelId = parseInt(sel.value);
+
+    if (!channelId) { alert('Please select a channel first.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+    try {
+        const resp = await fetch('/TurkishDrama/SaveVideo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ language: lang, dramaSeries: series, sceneOrEmotion: scene, channelId })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            btn.closest('.card').innerHTML =
+                `<div class="alert alert-success py-2 mb-0 small">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Saved as Video #${data.videoId}
+                    <a href="/Videos/Details/${data.videoId}" class="alert-link ms-1">View →</a>
+                </div>`;
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Save as ScriptReady';
+            alert('Save failed: ' + data.error);
+        }
+    } catch(e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-floppy me-1"></i> Save as ScriptReady';
+    }
+}
+</script>
+}

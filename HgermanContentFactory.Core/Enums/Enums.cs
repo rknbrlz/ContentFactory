@@ -26,7 +26,8 @@ public enum NicheCategory
     Gaming        = 12,
     Fashion       = 13,
     DIY           = 14,
-    Nature        = 15
+    Nature        = 15,
+    TurkishDrama = 16
 }
 
 public enum VideoStatus

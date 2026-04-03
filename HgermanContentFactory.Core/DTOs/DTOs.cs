@@ -236,3 +236,40 @@ public class SaveApiKeyDto
     public string ApiKey   { get; set; } = string.Empty;
     public bool IsDefault  { get; set; }
 }
+
+// ── Turkish Drama ──────────────────────────────────────────────────────────
+
+public class TurkishDramaTrendDto
+{
+    public string SeriesName       { get; set; } = string.Empty;
+    public string SceneOrEmotion   { get; set; } = string.Empty;
+    public string WhyViral         { get; set; } = string.Empty;
+    public double TrendScore       { get; set; }
+    public string Keywords         { get; set; } = string.Empty;
+    public ContentLanguage Language { get; set; }
+}
+
+public class TurkishDramaGenerateRequest
+{
+    public string DramaSeries      { get; set; } = string.Empty;
+    public string SceneOrEmotion   { get; set; } = string.Empty;
+    public ContentLanguage Language { get; set; }
+    public int? ChannelId          { get; set; }
+    public bool AutoSave           { get; set; } = false;
+}
+
+public class TurkishDramaContentDto
+{
+    public ContentLanguage Language { get; set; }
+    public string LanguageName     => Language.ToString();
+    public string DramaSeries      { get; set; } = string.Empty;
+    public string SceneOrEmotion   { get; set; } = string.Empty;
+    public string Title            { get; set; } = string.Empty;
+    public string Script           { get; set; } = string.Empty;
+    public string Description      { get; set; } = string.Empty;
+    public string Hashtags         { get; set; } = string.Empty;
+    public string Hook             { get; set; } = string.Empty;
+    public string CallToAction     { get; set; } = string.Empty;
+    public int? SavedVideoId       { get; set; }
+    public string? ErrorMessage    { get; set; }
+}

@@ -1,0 +1,129 @@
+@using HgermanContentFactory.Core.Entities
+@using HgermanContentFactory.Core.Enums
+@model List<CF_Video>
+@{
+    ViewData["Title"] = "Turkish Drama History";
+    var total    = (int)ViewBag.Total;
+    var page     = (int)ViewBag.Page;
+    var pageSize = (int)ViewBag.PageSize;
+    var pages    = (int)Math.Ceiling((double)total / pageSize);
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-clock-history me-2"></i>Turkish Drama History</h4>
+        <p class="text-muted mb-0">@total saved videos</p>
+    </div>
+    <a asp-action="Generate" class="btn btn-primary btn-sm">
+        <i class="bi bi-magic me-1"></i> Generate New
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card p-3 mb-3">
+    <form method="get" class="d-flex gap-2 align-items-end flex-wrap">
+        <div>
+            <label class="form-label small text-muted mb-1">Language</label>
+            <select name="language" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All languages</option>
+                @foreach (var l in (List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Languages)
+                {
+                    <option value="@l.Value" selected="@l.Selected">@l.Text</option>
+                }
+            </select>
+        </div>
+        <a asp-action="History" class="btn btn-outline-secondary btn-sm">Clear</a>
+    </form>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-camera-video" style="font-size:2rem"></i>
+        <div class="mt-2">No Turkish drama videos yet. <a asp-action="Generate">Generate one →</a></div>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Language</th>
+                    <th>Status</th>
+                    <th>Channel</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold" style="max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                @v.Title
+                            </div>
+                            @if (!string.IsNullOrEmpty(v.AIPromptUsed))
+                            {
+                                var parts = v.AIPromptUsed.Split('|');
+                                if (parts.Length >= 3)
+                                {
+                                    <small class="text-muted">@parts[1] · @parts[2]</small>
+                                }
+                            }
+                        </td>
+                        <td>
+                            @{
+                                var flag = v.Language switch {
+                                    ContentLanguage.Spanish => "🇪🇸",
+                                    ContentLanguage.French  => "🇫🇷",
+                                    ContentLanguage.German  => "🇩🇪",
+                                    ContentLanguage.Italian => "🇮🇹",
+                                    ContentLanguage.Polish  => "🇵🇱",
+                                    ContentLanguage.English => "🇬🇧",
+                                    _ => "🌐"
+                                };
+                            }
+                            @flag @v.Language
+                        </td>
+                        <td>
+                            <span class="badge @(v.Status switch {
+                                VideoStatus.Published   => "bg-success",
+                                VideoStatus.ScriptReady => "bg-info",
+                                VideoStatus.Rendered    => "bg-primary",
+                                VideoStatus.Failed      => "bg-danger",
+                                VideoStatus.Scheduled   => "bg-warning text-dark",
+                                _ => "bg-secondary"
+                            })">@v.Status</span>
+                        </td>
+                        <td class="small text-muted">@v.Channel?.Name</td>
+                        <td class="small text-muted">@v.CreatedAt.ToString("dd MMM HH:mm")</td>
+                        <td>
+                            <a asp-controller="Videos" asp-action="Details" asp-route-id="@v.Id"
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (pages > 1)
+    {
+        <nav>
+            <ul class="pagination pagination-sm">
+                @for (int p = 1; p <= pages; p++)
+                {
+                    <li class="page-item @(p == page ? "active" : "")">
+                        <a class="page-link" asp-action="History" asp-route-page="@p"
+                           asp-route-language="@ViewBag.Selected">@p</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

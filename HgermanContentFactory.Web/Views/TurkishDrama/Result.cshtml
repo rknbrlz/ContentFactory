@@ -1,0 +1,121 @@
+@using HgermanContentFactory.Core.DTOs
+@using HgermanContentFactory.Core.Enums
+@model List<TurkishDramaContentDto>
+@{
+    ViewData["Title"] = Model.Count == 1 ? "Content Generated" : "Bulk Content — 6 Languages";
+    var isBulk = Model.Count > 1;
+
+    var flagMap = new Dictionary<ContentLanguage, string> {
+        [ContentLanguage.Spanish] = "🇪🇸",
+        [ContentLanguage.French]  = "🇫🇷",
+        [ContentLanguage.German]  = "🇩🇪",
+        [ContentLanguage.Italian] = "🇮🇹",
+        [ContentLanguage.Polish]  = "🇵🇱",
+        [ContentLanguage.English] = "🇬🇧",
+    };
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="mb-1">
+            @if (isBulk)
+            {
+                <span>🌍 Bulk Content — @Model.Count Languages</span>
+            }
+            else
+            {
+                <span>✅ Content Generated</span>
+            }
+        </h4>
+        @if (Model.Count > 0)
+        {
+            <p class="text-muted mb-0">
+                @Model[0].DramaSeries · <em>@Model[0].SceneOrEmotion</em>
+            </p>
+        }
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" onclick="copyAll()">
+            <i class="bi bi-clipboard me-1"></i> Copy All
+        </button>
+        <a asp-action="Generate" class="btn btn-primary btn-sm">
+            <i class="bi bi-arrow-repeat me-1"></i> Generate More
+        </a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if (isBulk)
+{
+    <!-- Tab navigation for bulk -->
+    <ul class="nav nav-tabs mb-3" id="langTabs">
+        @for (int i = 0; i < Model.Count; i++)
+        {
+            var item = Model[i];
+            var flag = flagMap.GetValueOrDefault(item.Language, "🌐");
+            <li class="nav-item">
+                <button class="nav-link @(i == 0 ? "active" : "")"
+                        data-bs-toggle="tab"
+                        data-bs-target="#tab-@i">
+                    @flag @item.LanguageName
+                    @if (item.ErrorMessage != null)
+                    {
+                        <i class="bi bi-exclamation-circle text-danger ms-1"></i>
+                    }
+                </button>
+            </li>
+        }
+    </ul>
+    <div class="tab-content">
+        @for (int i = 0; i < Model.Count; i++)
+        {
+            <div class="tab-pane fade @(i == 0 ? "show active" : "")" id="tab-@i">
+                @await Html.PartialAsync("_ContentCard", Model[i])
+            </div>
+        }
+    </div>
+}
+else
+{
+    @await Html.PartialAsync("_ContentCard", Model[0])
+}
+
+@section Scripts {
+<script>
+function copyAll() {
+    const texts = [];
+    document.querySelectorAll('.content-block').forEach(el => {
+        texts.push(el.innerText);
+        texts.push('\n---\n');
+    });
+    navigator.clipboard.writeText(texts.join('\n'))
+        .then(() => {
+            const btn = event.target.closest('button');
+            btn.innerHTML = '<i class="bi bi-check me-1"></i> Copied!';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-outline-secondary');
+            setTimeout(() => {
+                btn.innerHTML = '<i class="bi bi-clipboard me-1"></i> Copy All';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
+}
+
+function copyField(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check"></i>';
+        btn.classList.add('btn-success');
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.classList.remove('btn-success');
+        }, 1500);
+    });
+}
+</script>
+}

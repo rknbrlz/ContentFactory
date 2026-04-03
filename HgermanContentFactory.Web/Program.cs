@@ -6,6 +6,7 @@ using HgermanContentFactory.Infrastructure.Repositories;
 using HgermanContentFactory.Infrastructure.Services;
 using HgermanContentFactory.Infrastructure.Services.AI;
 using HgermanContentFactory.Infrastructure.Services.Renderer;
+using HgermanContentFactory.Infrastructure.Services.TurkishDrama;
 using HgermanContentFactory.Infrastructure.Services.YouTube;
 using HgermanContentFactory.Web.Hubs;
 using Microsoft.EntityFrameworkCore;
@@ -64,6 +65,10 @@ builder.Services.AddScoped<IVideoGenerationService, VideoGenerationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ITrendAnalysisService, TrendAnalysisService>();
 builder.Services.AddScoped<ISchedulerService, SchedulerService>();
+builder.Services.AddHttpClient<ITurkishDramaService, TurkishDramaService>();
+
+// ── Turkish Drama Service ───────────────────────────────────────────────────
+builder.Services.AddHttpClient<ITurkishDramaService, TurkishDramaService>();
 
 // ── SignalR ────────────────────────────────────────────────────────────────
 builder.Services.AddSignalR();

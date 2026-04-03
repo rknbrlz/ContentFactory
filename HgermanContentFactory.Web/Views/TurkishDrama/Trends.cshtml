@@ -1,0 +1,141 @@
+@using HgermanContentFactory.Core.Enums
+@{
+    ViewData["Title"] = "Drama Trend Analyzer";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-graph-up-arrow me-2 text-info"></i>Drama Trend Analyzer</h4>
+        <p class="text-muted mb-0">Discover which Turkish drama moments are viral per market</p>
+    </div>
+    <a asp-action="Generate" class="btn btn-primary btn-sm">
+        <i class="bi bi-magic me-1"></i> Generate Content
+    </a>
+</div>
+
+<!-- Language selector -->
+<div class="card p-3 mb-4">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <span class="text-muted small me-2">Select market:</span>
+        @foreach (var item in (List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Languages)
+        {
+            <button class="btn btn-outline-secondary btn-sm lang-btn"
+                    data-lang="@item.Value">
+                @item.Text
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Loading state -->
+<div id="loading" class="text-center py-5 d-none">
+    <div class="spinner-border text-info" role="status"></div>
+    <div class="text-muted mt-2 small">Analyzing trends with AI...</div>
+</div>
+
+<!-- Results -->
+<div id="results" class="d-none">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="mb-0" id="results-title">Trending Now</h6>
+        <span class="badge bg-info" id="results-count"></span>
+    </div>
+    <div id="trend-cards" class="row g-3"></div>
+</div>
+
+<div id="empty" class="text-center py-5">
+    <i class="bi bi-graph-up-arrow text-muted" style="font-size:3rem"></i>
+    <div class="text-muted mt-3">Select a language market to analyze trends</div>
+</div>
+
+@section Scripts {
+<script>
+const langNames = {
+    3: '🇪🇸 Español', 4: '🇫🇷 Français', 2: '🇩🇪 Deutsch',
+    5: '🇮🇹 Italiano', 6: '🇵🇱 Polski', 1: '🇬🇧 English'
+};
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active', 'btn-info'));
+        this.classList.add('active', 'btn-info');
+        this.classList.remove('btn-outline-secondary');
+        fetchTrends(parseInt(this.dataset.lang));
+    });
+});
+
+async function fetchTrends(lang) {
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('results').classList.add('d-none');
+    document.getElementById('empty').classList.add('d-none');
+
+    try {
+        const resp = await fetch('/TurkishDrama/GetTrends', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ language: lang })
+        });
+        const data = await resp.json();
+
+        document.getElementById('loading').classList.add('d-none');
+
+        if (data.success && data.trends.length > 0) {
+            renderTrends(data.trends, langNames[lang]);
+            document.getElementById('results').classList.remove('d-none');
+        } else {
+            document.getElementById('empty').classList.remove('d-none');
+        }
+    } catch(e) {
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('empty').classList.remove('d-none');
+    }
+}
+
+function renderTrends(trends, langName) {
+    document.getElementById('results-title').textContent = `Trending for ${langName}`;
+    document.getElementById('results-count').textContent = `${trends.length} topics`;
+
+    const container = document.getElementById('trend-cards');
+    container.innerHTML = trends.map((t, i) => `
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 p-3 trend-card" style="cursor:pointer"
+                 onclick="useForContent('${escHtml(t.seriesName)}', '${escHtml(t.sceneOrEmotion)}')">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-secondary">#${i+1}</span>
+                    <span class="badge ${scoreColor(t.trendScore)}">${Math.round(t.trendScore)}</span>
+                </div>
+                <div class="fw-semibold mb-1">${escHtml(t.seriesName)}</div>
+                <div class="text-info small mb-2">${escHtml(t.sceneOrEmotion)}</div>
+                <div class="text-muted small mb-3">${escHtml(t.whyViral)}</div>
+                <div class="mt-auto">
+                    <div class="progress mb-2" style="height:4px">
+                        <div class="progress-bar bg-info" style="width:${t.trendScore}%"></div>
+                    </div>
+                    <div class="text-muted" style="font-size:.7rem">${escHtml(t.keywords)}</div>
+                </div>
+                <div class="mt-2 text-center">
+                    <span class="badge bg-primary" style="font-size:.65rem">
+                        <i class="bi bi-magic"></i> Click to generate content
+                    </span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function scoreColor(s) {
+    if (s >= 80) return 'bg-danger';
+    if (s >= 60) return 'bg-warning text-dark';
+    return 'bg-secondary';
+}
+
+function useForContent(series, scene) {
+    const url = `/TurkishDrama/Generate?series=${encodeURIComponent(series)}&scene=${encodeURIComponent(scene)}`;
+    window.location.href = url;
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+}

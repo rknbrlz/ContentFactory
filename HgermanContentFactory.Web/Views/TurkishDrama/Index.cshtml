@@ -1,0 +1,91 @@
+@{
+    ViewData["Title"] = "Turkish Drama Shorts";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="mb-1">🎬 Turkish Drama Shorts</h4>
+        <p class="text-muted mb-0">Viral short-video content for 6 language markets</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Trends" class="btn btn-outline-info">
+            <i class="bi bi-graph-up-arrow me-1"></i> Trend Analyzer
+        </a>
+        <a asp-action="Generate" class="btn btn-primary">
+            <i class="bi bi-magic me-1"></i> Generate Content
+        </a>
+    </div>
+</div>
+
+<!-- Channel cards -->
+<div class="row g-3 mb-4">
+    @foreach (var (lang, flag, color) in new[] {
+        ("Español",  "🇪🇸", "danger"),
+        ("Français", "🇫🇷", "primary"),
+        ("Deutsch",  "🇩🇪", "warning"),
+        ("Italiano", "🇮🇹", "success"),
+        ("Polski",   "🇵🇱", "info"),
+        ("English",  "🇬🇧", "secondary"),
+    })
+    {
+        <div class="col-md-4 col-lg-2">
+            <div class="card h-100 text-center p-3">
+                <div style="font-size:2.5rem">@flag</div>
+                <div class="fw-semibold mt-2">@lang</div>
+                <div class="text-muted small">Love Beyond Borders</div>
+                <a asp-action="Generate" class="btn btn-sm btn-outline-@color mt-3 stretched-link">
+                    Generate
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Quick actions -->
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h6 class="mb-3"><i class="bi bi-magic me-2"></i>Quick Bulk Generate</h6>
+            <p class="text-muted small">Pick a drama + scene, generate content for all 6 languages at once.</p>
+            <form asp-action="GenerateBulk" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <select name="dramaSeries" class="form-select form-select-sm" required>
+                        <option value="">Select drama series...</option>
+                        @foreach (var s in new[] {
+                            "Kara Sevda (Endless Love)",
+                            "Sen Çal Kapımı (Love Is in the Air)",
+                            "Yalı Çapkını (The Kingfisher)",
+                            "Aşk-ı Memnu (Forbidden Love)",
+                            "Diriliş Ertuğrul (Resurrection Ertugrul)",
+                            "Muhtesem Yuzyil (Magnificent Century)",
+                            "Çukur (The Pit)",
+                            "Yemin (The Promise)",
+                        }) {
+                            <option>@s</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <input type="text" name="sceneOrEmotion" class="form-control form-control-sm"
+                           placeholder="Scene or emotion (e.g. 'He discovers her secret')" required />
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-globe me-1"></i> Generate All 6 Languages
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h6 class="mb-3"><i class="bi bi-graph-up-arrow me-2"></i>Trend Analyzer</h6>
+            <p class="text-muted small">Discover which Turkish drama moments are trending per language market right now.</p>
+            <a asp-action="Trends" class="btn btn-outline-info btn-sm w-100 mb-2">
+                <i class="bi bi-search me-1"></i> Analyze Trends
+            </a>
+            <a asp-action="History" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="bi bi-clock-history me-1"></i> View Content History
+            </a>
+        </div>
+    </div>
+</div>
