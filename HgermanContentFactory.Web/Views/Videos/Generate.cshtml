@@ -1,0 +1,107 @@
+@model HgermanContentFactory.Core.DTOs.GenerateVideoRequestDto
+@{ ViewData["Title"] = "Generate Video"; }
+
+<div class="row justify-content-center">
+<div class="col-xl-8">
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-magic me-2 text-primary"></i>Generate AI Video
+    </div>
+    <div class="card-body">
+        <form asp-action="Generate" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="mb-4">
+                <label asp-for="ChannelId" class="form-label">Channel <span class="text-danger">*</span></label>
+                <select asp-for="ChannelId" asp-items="@ViewBag.Channels" class="form-select">
+                    <option value="">— Select a channel —</option>
+                </select>
+                <span asp-validation-for="ChannelId" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Topic Source</label>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100 topic-option" id="optTrend" onclick="selectTopic('trend')">
+                            <div class="card-body text-center py-3">
+                                <i class="bi bi-fire display-6 text-danger mb-2"></i>
+                                <div class="fw-semibold">Trending Topic</div>
+                                <small class="text-muted">AI-discovered trend</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 topic-option" id="optCustom" onclick="selectTopic('custom')">
+                            <div class="card-body text-center py-3">
+                                <i class="bi bi-pencil-square display-6 text-primary mb-2"></i>
+                                <div class="fw-semibold">Custom Topic</div>
+                                <small class="text-muted">Define your own topic</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="trendSection" class="mb-4 d-none">
+                <label asp-for="TrendTopicId" class="form-label">Select Trending Topic</label>
+                <select asp-for="TrendTopicId" asp-items="@ViewBag.Trends" class="form-select">
+                    <option value="">— Auto-select highest scored trend —</option>
+                </select>
+            </div>
+
+            <div id="customSection" class="mb-4 d-none">
+                <label asp-for="CustomTopic" class="form-label">Custom Topic</label>
+                <input asp-for="CustomTopic" class="form-control"
+                       placeholder="e.g. 5 mind-blowing science facts about black holes" />
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="StyleInstructions" class="form-label">Style Instructions
+                    <small class="text-muted">(optional)</small>
+                </label>
+                <textarea asp-for="StyleInstructions" class="form-control" rows="2"
+                          placeholder="e.g. Use a dramatic and suspenseful tone. Include statistics."></textarea>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label asp-for="ScheduleAt" class="form-label">Schedule For
+                        <small class="text-muted">(optional)</small>
+                    </label>
+                    <input asp-for="ScheduleAt" type="datetime-local" class="form-control" />
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <input asp-for="AutoPublish" type="checkbox" class="form-check-input" id="autoPublish" />
+                        <label class="form-check-label" for="autoPublish">
+                            Auto-publish to YouTube after generation
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-magic me-2"></i>Generate Video
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-lg">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+</div>
+
+@section Scripts {
+<script>
+function selectTopic(type) {
+    document.getElementById('optTrend').classList.toggle('border-primary', type === 'trend');
+    document.getElementById('optCustom').classList.toggle('border-primary', type === 'custom');
+    document.getElementById('trendSection').classList.toggle('d-none', type !== 'trend');
+    document.getElementById('customSection').classList.toggle('d-none', type !== 'custom');
+}
+selectTopic('trend');
+</script>
+}

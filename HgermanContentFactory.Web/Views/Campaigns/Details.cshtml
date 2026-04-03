@@ -1,0 +1,123 @@
+@using HgermanContentFactory.Core.Entities
+@model CF_Campaign
+@{ ViewData["Title"] = "Campaign Details"; }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0">@Model.Name</h4>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Back
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Campaign Info</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">Channel</dt>
+                    <dd class="col-7">@Model.Channel?.Name</dd>
+                    <dt class="col-5 text-muted">Start</dt>
+                    <dd class="col-7">@Model.StartDate.ToString("MMM dd, yyyy")</dd>
+                    <dt class="col-5 text-muted">End</dt>
+                    <dd class="col-7">@(Model.EndDate?.ToString("MMM dd, yyyy") ?? "Ongoing")</dd>
+                    <dt class="col-5 text-muted">Videos/Day</dt>
+                    <dd class="col-7">@Model.VideosPerDay</dd>
+                    <dt class="col-5 text-muted">Auto-Publish</dt>
+                    <dd class="col-7">
+                        <span class="badge @(Model.AutoPublish ? "bg-success" : "bg-secondary")">
+                            @(Model.AutoPublish ? "Yes" : "No")
+                        </span>
+                    </dd>
+                    @if (!string.IsNullOrEmpty(Model.ContentStyle))
+                    {
+                        <dt class="col-5 text-muted">Style</dt>
+                        <dd class="col-7">@Model.ContentStyle</dd>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.TargetAudience))
+                    {
+                        <dt class="col-5 text-muted">Audience</dt>
+                        <dd class="col-7">@Model.TargetAudience</dd>
+                    }
+                </dl>
+
+                <hr />
+                <div class="mb-1 d-flex justify-content-between small">
+                    <span>Progress</span>
+                    <strong>@Model.TotalVideosProduced / @Model.TotalVideosPlanned</strong>
+                </div>
+                @{
+                    var pct = Model.TotalVideosPlanned > 0
+                        ? (int)(Model.TotalVideosProduced * 100.0 / Model.TotalVideosPlanned)
+                        : 0;
+                }
+                <div class="progress" style="height:8px">
+                    <div class="progress-bar" style="width:@Math.Min(pct,100)%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-camera-video me-2"></i>Videos in this Campaign</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Published</th>
+                                <th>Views</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var v in Model.Videos.OrderByDescending(v => v.CreatedAt))
+                            {
+                                <tr>
+                                    <td class="text-truncate" style="max-width:260px">@v.Title</td>
+                                    <td>
+                                        <span class="badge @StatusBadge(v.Status)">@v.Status</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @(v.PublishedAt?.ToString("MM/dd HH:mm") ?? "—")
+                                        </small>
+                                    </td>
+                                    <td>@v.Views.ToString("N0")</td>
+                                    <td>
+                                        <a asp-controller="Videos" asp-action="Details" asp-route-id="@v.Id"
+                                           class="btn btn-xs btn-outline-secondary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.Videos.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        No videos generated yet for this campaign.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string StatusBadge(HgermanContentFactory.Core.Enums.VideoStatus s) => s switch {
+        HgermanContentFactory.Core.Enums.VideoStatus.Published  => "bg-success",
+        HgermanContentFactory.Core.Enums.VideoStatus.Scheduled  => "bg-info text-dark",
+        HgermanContentFactory.Core.Enums.VideoStatus.Rendered   => "bg-primary",
+        HgermanContentFactory.Core.Enums.VideoStatus.Failed     => "bg-danger",
+        HgermanContentFactory.Core.Enums.VideoStatus.Cancelled  => "bg-secondary",
+        _ => "bg-warning text-dark"
+    };
+}

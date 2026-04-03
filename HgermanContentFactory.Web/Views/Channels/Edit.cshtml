@@ -1,0 +1,65 @@
+@model HgermanContentFactory.Core.DTOs.EditChannelDto
+@{ ViewData["Title"] = "Edit Channel"; }
+
+<div class="row justify-content-center">
+<div class="col-xl-7">
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-pencil me-2 text-warning"></i>Edit Channel
+    </div>
+    <div class="card-body">
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="Id" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Channel Name</label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label">Description</label>
+                <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label asp-for="Language" class="form-label">Language</label>
+                    <select asp-for="Language" asp-items="@ViewBag.Languages" class="form-select"></select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Niche" class="form-label">Niche</label>
+                    <select asp-for="Niche" asp-items="@ViewBag.Niches" class="form-select"></select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Platform" class="form-label">Platform</label>
+                    <select asp-for="Platform" asp-items="@ViewBag.Platforms" class="form-select"></select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DailyVideoTarget" class="form-label">
+                    Daily Videos: <strong id="dailyLabel">@Model.DailyVideoTarget</strong>
+                </label>
+                <input asp-for="DailyVideoTarget" type="range" class="form-range" min="1" max="20"
+                       oninput="document.getElementById('dailyLabel').textContent = this.value" />
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="DefaultHashtags" class="form-label">Default Hashtags</label>
+                <input asp-for="DefaultHashtags" class="form-control" />
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-check-lg me-2"></i>Save Changes
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+</div>

@@ -1,0 +1,81 @@
+@model HgermanContentFactory.Core.DTOs.CreateChannelDto
+@{ ViewData["Title"] = "Create Channel"; }
+
+<div class="row justify-content-center">
+<div class="col-xl-7">
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-plus-circle me-2 text-primary"></i>Create New Channel
+    </div>
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Channel Name <span class="text-danger">*</span></label>
+                <input asp-for="Name" class="form-control" placeholder="e.g. TechShorts Germany" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label">Description</label>
+                <textarea asp-for="Description" class="form-control" rows="2"
+                          placeholder="Short description of this channel's content focus"></textarea>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label asp-for="Language" class="form-label">Language <span class="text-danger">*</span></label>
+                    <select asp-for="Language" asp-items="@ViewBag.Languages" class="form-select">
+                        <option value="">— Select —</option>
+                    </select>
+                    <span asp-validation-for="Language" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Niche" class="form-label">Niche <span class="text-danger">*</span></label>
+                    <select asp-for="Niche" asp-items="@ViewBag.Niches" class="form-select">
+                        <option value="">— Select —</option>
+                    </select>
+                    <span asp-validation-for="Niche" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Platform" class="form-label">Platform <span class="text-danger">*</span></label>
+                    <select asp-for="Platform" asp-items="@ViewBag.Platforms" class="form-select">
+                        <option value="">— Select —</option>
+                    </select>
+                    <span asp-validation-for="Platform" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DailyVideoTarget" class="form-label">
+                    Daily Videos Target: <strong id="dailyLabel">@Model.DailyVideoTarget</strong>
+                </label>
+                <input asp-for="DailyVideoTarget" type="range" class="form-range"
+                       min="1" max="20"
+                       oninput="document.getElementById('dailyLabel').textContent = this.value" />
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span>
+                </div>
+                <span asp-validation-for="DailyVideoTarget" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="DefaultHashtags" class="form-label">Default Hashtags</label>
+                <input asp-for="DefaultHashtags" class="form-control"
+                       placeholder="#shorts #viral #trending" />
+                <small class="text-muted">Added to every video generated for this channel.</small>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-2"></i>Create Channel
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+</div>

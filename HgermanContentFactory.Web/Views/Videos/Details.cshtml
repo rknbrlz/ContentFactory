@@ -1,0 +1,191 @@
+@using HgermanContentFactory.Core.Entities
+@model CF_Video
+@{ ViewData["Title"] = "Video Details"; }
+
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-camera-video me-2 text-primary"></i>@Model.Title</span>
+                <span class="badge @StatusBadge(Model.Status) fs-6">@Model.Status</span>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-4 text-muted">Channel</dt>
+                    <dd class="col-8">@Model.Channel?.Name</dd>
+                    <dt class="col-4 text-muted">Language</dt>
+                    <dd class="col-8"><span class="badge bg-secondary">@Model.Language</span></dd>
+                    <dt class="col-4 text-muted">Niche</dt>
+                    <dd class="col-8"><span class="badge bg-dark">@Model.Niche</span></dd>
+                    @if (Model.TrendTopic != null)
+                    {
+                        <dt class="col-4 text-muted">Trend Topic</dt>
+                        <dd class="col-8"><i class="bi bi-fire text-danger me-1"></i>@Model.TrendTopic.Title</dd>
+                    }
+                    @if (Model.ScheduledAt.HasValue)
+                    {
+                        <dt class="col-4 text-muted">Scheduled At</dt>
+                        <dd class="col-8">@Model.ScheduledAt.Value.ToString("MMM dd, yyyy HH:mm") UTC</dd>
+                    }
+                    @if (Model.PublishedAt.HasValue)
+                    {
+                        <dt class="col-4 text-muted">Published At</dt>
+                        <dd class="col-8">@Model.PublishedAt.Value.ToString("MMM dd, yyyy HH:mm") UTC</dd>
+                    }
+                    @if (Model.YouTubeVideoId != null)
+                    {
+                        <dt class="col-4 text-muted">YouTube</dt>
+                        <dd class="col-8">
+                            <a href="https://youtu.be/@Model.YouTubeVideoId" target="_blank" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-youtube me-1"></i>Watch on YouTube
+                            </a>
+                        </dd>
+                    }
+                    @if (Model.DurationSeconds > 0)
+                    {
+                        <dt class="col-4 text-muted">Duration</dt>
+                        <dd class="col-8">@Model.DurationSeconds seconds</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-card-text me-2"></i>Description</div>
+                <div class="card-body"><p class="mb-0">@Model.Description</p></div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Script))
+        {
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between">
+                    <span><i class="bi bi-file-text me-2"></i>Script</span>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="copyScript()">
+                        <i class="bi bi-clipboard me-1"></i>Copy
+                    </button>
+                </div>
+                <div class="card-body">
+                    <pre id="scriptText" class="mb-0" style="white-space:pre-wrap;font-family:inherit">@Model.Script</pre>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Hashtags))
+        {
+            <div class="card">
+                <div class="card-header"><i class="bi bi-hash me-2"></i>Hashtags</div>
+                <div class="card-body">
+                    @foreach (var tag in Model.Hashtags.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <span class="badge bg-secondary me-1 mb-1">@tag</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-xl-4">
+        <!-- Stats -->
+        @if (Model.Status == HgermanContentFactory.Core.Enums.VideoStatus.Published)
+        {
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-bar-chart-fill me-2 text-success"></i>Performance</div>
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-4">
+                            <div class="stat-mini">@Model.Views.ToString("N0")</div>
+                            <small class="text-muted">Views</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-mini">@Model.Likes.ToString("N0")</div>
+                            <small class="text-muted">Likes</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-mini">@Model.Comments.ToString("N0")</div>
+                            <small class="text-muted">Comments</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Actions -->
+        <div class="card">
+            <div class="card-header"><i class="bi bi-lightning-fill me-2 text-warning"></i>Actions</div>
+            <div class="card-body d-grid gap-2">
+                @if (Model.Status == HgermanContentFactory.Core.Enums.VideoStatus.Rendered)
+                {
+                    <button class="btn btn-danger" onclick="publishVideo(@Model.Id)">
+                        <i class="bi bi-youtube me-2"></i>Publish to YouTube
+                    </button>
+                }
+                @if (Model.Status == HgermanContentFactory.Core.Enums.VideoStatus.ScriptReady)
+                {
+                    <button class="btn btn-primary" onclick="renderVideo(@Model.Id)">
+                        <i class="bi bi-film me-2"></i>Render Video
+                    </button>
+                }
+                <a asp-action="Generate" asp-route-channelId="@Model.ChannelId"
+                   class="btn btn-outline-primary">
+                    <i class="bi bi-magic me-2"></i>Generate Another
+                </a>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Videos
+                </a>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger mt-3">
+                <strong>Error:</strong> @Model.ErrorMessage
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function copyScript() {
+    navigator.clipboard.writeText(document.getElementById('scriptText').textContent);
+    showToast('Script copied to clipboard!', 'success');
+}
+
+async function publishVideo(id) {
+    if (!confirm('Publish this video to YouTube?')) return;
+    showToast('Publishing...', 'info');
+    const res  = await fetch(`/Videos/Publish/${id}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+        showToast('Published! Refreshing...', 'success');
+        setTimeout(() => location.reload(), 1200);
+    } else {
+        showToast('Failed: ' + (data.error ?? 'unknown error'), 'danger');
+    }
+}
+
+async function renderVideo(id) {
+    showToast('Rendering video...', 'info');
+    const res  = await fetch(`/Videos/Render/${id}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+        showToast('Rendered! Refreshing...', 'success');
+        setTimeout(() => location.reload(), 1200);
+    }
+}
+</script>
+}
+
+@functions {
+    string StatusBadge(HgermanContentFactory.Core.Enums.VideoStatus s) => s switch {
+        HgermanContentFactory.Core.Enums.VideoStatus.Published  => "bg-success",
+        HgermanContentFactory.Core.Enums.VideoStatus.Scheduled  => "bg-info text-dark",
+        HgermanContentFactory.Core.Enums.VideoStatus.Rendered   => "bg-primary",
+        HgermanContentFactory.Core.Enums.VideoStatus.Failed     => "bg-danger",
+        HgermanContentFactory.Core.Enums.VideoStatus.Cancelled  => "bg-secondary",
+        _ => "bg-warning text-dark"
+    };
+}

@@ -1,0 +1,191 @@
+@using HgermanContentFactory.Core.Entities
+@model IEnumerable<CF_TrendTopic>
+@{
+    ViewData["Title"] = "Trending Topics";
+    var selectedLang  = ViewBag.SelectedLanguage?.ToString() ?? "";
+    var selectedNiche = ViewBag.SelectedNiche?.ToString()    ?? "";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h4 class="mb-0 fw-bold">Trending Topics</h4>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" onclick="refreshModal()">
+            <i class="bi bi-arrow-repeat me-2"></i>Refresh for Channel
+        </button>
+        <form asp-action="RefreshAll" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-broadcast me-2"></i>Refresh All Channels
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex gap-3 flex-wrap align-items-center">
+            <select name="language" class="form-select form-select-sm" style="width:auto">
+                <option value="">All Languages</option>
+                @foreach (var l in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Languages)
+                {
+                    if (selectedLang == l.Value)
+                    {
+                        <option value="@l.Value" selected>@l.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@l.Value">@l.Text</option>
+                    }
+                }
+            </select>
+            <select name="niche" class="form-select form-select-sm" style="width:auto">
+                <option value="">All Niches</option>
+                @foreach (var n in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Niches)
+                {
+                    if (selectedNiche == n.Value)
+                    {
+                        <option value="@n.Value" selected>@n.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@n.Value">@n.Text</option>
+                    }
+                }
+            </select>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Reset</a>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3">
+    @foreach (var t in Model)
+    {
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 trend-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="trend-score-lg @TrendScoreClass(t.TrendScore)">@((int)t.TrendScore)</div>
+                        <span class="badge @StatusBadge(t.Status)">@t.Status</span>
+                    </div>
+                    <h6 class="fw-bold mb-1">@t.Title</h6>
+                    <p class="text-muted small mb-2">
+                        @(t.Description != null && t.Description.Length > 100
+                            ? t.Description.Substring(0, 100) + "…"
+                            : t.Description)
+                    </p>
+                    <div class="d-flex gap-1 flex-wrap mb-2">
+                        <span class="badge bg-secondary">@t.Language</span>
+                        <span class="badge bg-dark">@t.Niche</span>
+                        <span class="badge bg-secondary bg-opacity-25 text-muted border">
+                            <i class="bi bi-camera-video me-1"></i>@t.UsageCount used
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(t.Keywords))
+                    {
+                        <div class="small text-muted">
+                            @foreach (var kw in t.Keywords.Split(',').Take(3))
+                            {
+                                <span class="badge bg-secondary bg-opacity-25 text-muted me-1">@kw.Trim()</span>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="card-footer d-flex gap-2">
+                    <a asp-controller="Videos" asp-action="Generate"
+                       class="btn btn-sm btn-outline-primary flex-grow-1">
+                        <i class="bi bi-magic me-1"></i>Use Topic
+                    </a>
+                    <form asp-action="Delete" asp-route-id="@t.Id" method="post"
+                          onsubmit="return confirm('Remove this trend?')">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+    @if (!Model.Any())
+    {
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-graph-up-arrow display-1 text-muted"></i>
+            <p class="mt-3 text-muted">No trends yet. Click "Refresh All Channels" to discover trending topics.</p>
+        </div>
+    }
+</div>
+
+<!-- Refresh Modal -->
+<div class="modal fade" id="refreshModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Refresh Trends</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Language</label>
+                    <select id="refreshLang" class="form-select">
+                        @foreach (var l in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Languages)
+                        {
+                            <option value="@l.Value">@l.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Niche</label>
+                    <select id="refreshNiche" class="form-select">
+                        @foreach (var n in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Niches)
+                        {
+                            <option value="@n.Value">@n.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" onclick="runRefresh()">
+                    <i class="bi bi-arrow-repeat me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function refreshModal() {
+    new bootstrap.Modal(document.getElementById('refreshModal')).show();
+}
+async function runRefresh() {
+    const language = parseInt(document.getElementById('refreshLang').value);
+    const niche    = parseInt(document.getElementById('refreshNiche').value);
+    bootstrap.Modal.getInstance(document.getElementById('refreshModal')).hide();
+    showToast('Analyzing trends with AI...', 'info');
+    const res  = await fetch('/Trends/Refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language, niche })
+    });
+    const data = await res.json();
+    showToast('Found ' + data.count + ' trending topics!', 'success');
+    setTimeout(() => location.reload(), 1200);
+}
+</script>
+}
+
+@functions {
+    string TrendScoreClass(double s) =>
+        s >= 80 ? "trend-score-high" : s >= 50 ? "trend-score-mid" : "trend-score-low";
+
+    string StatusBadge(HgermanContentFactory.Core.Enums.TrendStatus s) => s switch
+    {
+        HgermanContentFactory.Core.Enums.TrendStatus.Rising    => "bg-success",
+        HgermanContentFactory.Core.Enums.TrendStatus.Peak      => "bg-warning text-dark",
+        HgermanContentFactory.Core.Enums.TrendStatus.Declining => "bg-secondary",
+        _ => "bg-info text-dark"
+    };
+}

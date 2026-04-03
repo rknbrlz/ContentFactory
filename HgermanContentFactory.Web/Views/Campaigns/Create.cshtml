@@ -1,0 +1,79 @@
+@model HgermanContentFactory.Core.DTOs.CreateCampaignDto
+@{ ViewData["Title"] = "Create Campaign"; }
+
+<div class="row justify-content-center">
+<div class="col-xl-7">
+<div class="card">
+    <div class="card-header"><i class="bi bi-megaphone me-2 text-primary"></i>New Campaign</div>
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Campaign Name <span class="text-danger">*</span></label>
+                <input asp-for="Name" class="form-control" placeholder="e.g. October Tech Blitz" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label">Description</label>
+                <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ChannelId" class="form-label">Channel <span class="text-danger">*</span></label>
+                <select asp-for="ChannelId" asp-items="@ViewBag.Channels" class="form-select">
+                    <option value="">— Select Channel —</option>
+                </select>
+                <span asp-validation-for="ChannelId" class="text-danger small"></span>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label asp-for="StartDate" class="form-label">Start Date</label>
+                    <input asp-for="StartDate" type="date" class="form-control"
+                           value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="EndDate" class="form-label">End Date <small class="text-muted">(optional)</small></label>
+                    <input asp-for="EndDate" type="date" class="form-control" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="VideosPerDay" class="form-label">
+                    Videos Per Day: <strong id="vpd">@Model.VideosPerDay</strong>
+                </label>
+                <input asp-for="VideosPerDay" type="range" class="form-range" min="1" max="20"
+                       oninput="document.getElementById('vpd').textContent = this.value" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ContentStyle" class="form-label">Content Style</label>
+                <input asp-for="ContentStyle" class="form-control"
+                       placeholder="e.g. Educational, fast-paced, with examples" />
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="TargetAudience" class="form-label">Target Audience</label>
+                <input asp-for="TargetAudience" class="form-control"
+                       placeholder="e.g. Young professionals aged 25–35" />
+            </div>
+
+            <div class="form-check mb-4">
+                <input asp-for="AutoPublish" type="checkbox" class="form-check-input" />
+                <label asp-for="AutoPublish" class="form-check-label">Auto-publish videos to YouTube</label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-2"></i>Create Campaign
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+</div>

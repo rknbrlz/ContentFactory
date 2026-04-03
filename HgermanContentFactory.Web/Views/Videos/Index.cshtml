@@ -1,0 +1,246 @@
+@using HgermanContentFactory.Core.Entities
+@model IEnumerable<CF_Video>
+@{
+    ViewData["Title"] = "Videos";
+    var selectedChannelId = ViewBag.ChannelId?.ToString() ?? "";
+    var selectedStatus = ViewBag.Status?.ToString() ?? "";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h4 class="mb-0 fw-bold">Videos
+        <span class="badge bg-secondary ms-2" style="font-size:.7rem">@ViewBag.Total total</span>
+    </h4>
+    <div class="d-flex gap-2">
+        <a asp-action="Generate" class="btn btn-primary">
+            <i class="bi bi-magic me-2"></i>Generate Video
+        </a>
+        <button class="btn btn-outline-success" onclick="showBulkModal()">
+            <i class="bi bi-collection me-2"></i>Bulk Generate
+        </button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex gap-3 flex-wrap align-items-center">
+            <select name="channelId" class="form-select form-select-sm" style="width:auto">
+                <option value="">All Channels</option>
+                @foreach (var ch in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Channels)
+                {
+                    if (selectedChannelId == ch.Value)
+                    {
+                        <option value="@ch.Value" selected>@ch.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@ch.Value">@ch.Text</option>
+                    }
+                }
+            </select>
+            <select name="status" class="form-select form-select-sm" style="width:auto">
+                <option value="">All Statuses</option>
+                @foreach (var s in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Statuses)
+                {
+                    if (selectedStatus == s.Value)
+                    {
+                        <option value="@s.Value" selected>@s.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@s.Value">@s.Text</option>
+                    }
+                }
+            </select>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Reset</a>
+        </form>
+    </div>
+</div>
+
+<!-- Video Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th width="40%">Title</th>
+                        <th>Channel</th>
+                        <th>Lang</th>
+                        <th>Status</th>
+                        <th>Views</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in Model)
+                    {
+                        <tr id="row_@v.Id">
+                            <td>
+                                <div class="text-truncate" style="max-width:350px" title="@v.Title">@v.Title</div>
+                                @if (v.TrendTopic != null)
+                                {
+                                    <small class="text-muted"><i class="bi bi-fire text-danger"></i> @v.TrendTopic.Title</small>
+                                }
+                            </td>
+                            <td><small>@v.Channel.Name</small></td>
+                            <td><span class="badge bg-secondary">@v.Language</span></td>
+                            <td>
+                                <span class="badge @StatusBadge(v.Status)" id="status_@v.Id">@v.Status</span>
+                            </td>
+                            <td>@v.Views.ToString("N0")</td>
+                            <td><small class="text-muted">@v.CreatedAt.ToString("MM/dd HH:mm")</small></td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a asp-action="Details" asp-route-id="@v.Id"
+                                       class="btn btn-xs btn-outline-secondary" title="Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    @if (v.Status == HgermanContentFactory.Core.Enums.VideoStatus.Rendered)
+                                    {
+                                        <button class="btn btn-xs btn-outline-success"
+                                                onclick="publishVideo(@v.Id)" title="Publish">
+                                            <i class="bi bi-youtube"></i>
+                                        </button>
+                                    }
+                                    @if (v.YouTubeVideoId != null)
+                                    {
+                                        <a href="https://youtu.be/@v.YouTubeVideoId" target="_blank"
+                                           class="btn btn-xs btn-outline-danger" title="View on YouTube">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                    }
+                                    @if (v.Status is HgermanContentFactory.Core.Enums.VideoStatus.Pending
+                                              or HgermanContentFactory.Core.Enums.VideoStatus.ScriptReady)
+                                    {
+                                        <form asp-action="Cancel" asp-route-id="@v.Id" method="post"
+                                              onsubmit="return confirm('Cancel this video?')" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-xs btn-outline-warning" title="Cancel">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+@{
+    var totalPages = (int)Math.Ceiling((double)ViewBag.Total / (double)ViewBag.PageSize);
+    var page = (int)ViewBag.Page;
+}
+@if (totalPages > 1)
+{
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == page ? "active" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-page="@i"
+                       asp-route-channelId="@ViewBag.ChannelId"
+                       asp-route-status="@ViewBag.Status">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+<!-- Bulk Generate Modal -->
+<div class="modal fade" id="bulkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-collection me-2"></i>Bulk Generate Videos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Channel</label>
+                    <select id="bulkChannelId" class="form-select">
+                        @foreach (var ch in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Channels)
+                        {
+                            <option value="@ch.Value">@ch.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Number of Videos: <strong id="bulkCountLabel">3</strong></label>
+                    <input type="range" class="form-range" id="bulkCount" min="1" max="20" value="3"
+                           oninput="document.getElementById('bulkCountLabel').textContent = this.value" />
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="bulkAutoPublish" />
+                    <label class="form-check-label" for="bulkAutoPublish">Auto-publish after generation</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="runBulkGenerate()">
+                    <i class="bi bi-magic me-2"></i>Generate
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function showBulkModal() {
+    new bootstrap.Modal(document.getElementById('bulkModal')).show();
+}
+
+async function runBulkGenerate() {
+    const channelId   = parseInt(document.getElementById('bulkChannelId').value);
+    const count       = parseInt(document.getElementById('bulkCount').value);
+    const autoPublish = document.getElementById('bulkAutoPublish').checked;
+
+    bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+    showToast(`Generating ${count} video(s)...`, 'info');
+
+    const res  = await fetch('/Videos/GenerateBulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelId, count, autoPublish })
+    });
+    const data = await res.json();
+    const ok   = data.results.filter(r => r.success).length;
+    showToast(`Generated ${ok}/${count} videos successfully.`, ok > 0 ? 'success' : 'danger');
+    if (ok > 0) setTimeout(() => location.reload(), 1500);
+}
+
+async function publishVideo(videoId) {
+    showToast('Publishing to YouTube...', 'info');
+    const res  = await fetch(`/Videos/Publish/${videoId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+        document.getElementById(`status_${videoId}`).className = 'badge bg-success';
+        document.getElementById(`status_${videoId}`).textContent = 'Published';
+        showToast('Published successfully!', 'success');
+    } else {
+        showToast('Publish failed: ' + (data.error ?? 'unknown error'), 'danger');
+    }
+}
+</script>
+}
+
+@functions {
+    string StatusBadge(HgermanContentFactory.Core.Enums.VideoStatus s) => s switch {
+        HgermanContentFactory.Core.Enums.VideoStatus.Published  => "bg-success",
+        HgermanContentFactory.Core.Enums.VideoStatus.Scheduled  => "bg-info text-dark",
+        HgermanContentFactory.Core.Enums.VideoStatus.Rendered   => "bg-primary",
+        HgermanContentFactory.Core.Enums.VideoStatus.ScriptReady=> "bg-info text-dark",
+        HgermanContentFactory.Core.Enums.VideoStatus.Failed     => "bg-danger",
+        HgermanContentFactory.Core.Enums.VideoStatus.Cancelled  => "bg-secondary",
+        _ => "bg-warning text-dark"
+    };
+}

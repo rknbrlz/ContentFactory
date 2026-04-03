@@ -1,0 +1,140 @@
+@model IEnumerable<HgermanContentFactory.Core.Entities.CF_Channel>
+@{ ViewData["Title"] = "Channels"; }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0 fw-bold">Channels</h4>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>New Channel
+    </a>
+</div>
+
+<div class="row g-3">
+@foreach (var ch in Model)
+{
+    <div class="col-md-6 col-xl-4">
+        <div class="card channel-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h6 class="fw-bold mb-1">@ch.Name</h6>
+                        <div class="d-flex gap-1 flex-wrap">
+                            <span class="badge bg-secondary">@ch.Language</span>
+                            <span class="badge bg-dark">@ch.Niche</span>
+                            <span class="badge @PlatformClass(ch.Platform)">@ch.Platform</span>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@ch.Id">
+                                <i class="bi bi-pencil me-2"></i>Edit</a></li>
+                            <li><a class="dropdown-item" asp-controller="Videos" asp-action="Generate"
+                                   asp-route-channelId="@ch.Id">
+                                <i class="bi bi-magic me-2"></i>Generate Video</a></li>
+                            @if (string.IsNullOrEmpty(ch.YouTubeChannelId))
+                            {
+                                <li><a class="dropdown-item text-danger" asp-action="ConnectYouTube" asp-route-id="@ch.Id">
+                                    <i class="bi bi-youtube me-2"></i>Connect YouTube</a></li>
+                            }
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form asp-action="Delete" asp-route-id="@ch.Id" method="post"
+                                      onsubmit="return confirm('Delete this channel?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-trash me-2"></i>Delete
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6 text-center">
+                        <div class="stat-mini">@ch.TotalVideosPublished</div>
+                        <small class="text-muted">Published</small>
+                    </div>
+                    <div class="col-6 text-center">
+                        <div class="stat-mini">@(ch.TotalViews > 1000 ? $"{ch.TotalViews/1000.0:F0}K" : ch.TotalViews.ToString())</div>
+                        <small class="text-muted">Views</small>
+                    </div>
+                </div>
+
+                <!-- Daily Target Slider -->
+                <div class="mb-2">
+                    <label class="form-label d-flex justify-content-between small mb-1">
+                        <span>Daily Videos</span>
+                        <strong id="targetLabel_@ch.Id">@ch.DailyVideoTarget / day</strong>
+                    </label>
+                    <input type="range" class="form-range daily-target-slider"
+                           min="1" max="20" value="@ch.DailyVideoTarget"
+                           data-channel-id="@ch.Id"
+                           oninput="document.getElementById('targetLabel_@ch.Id').textContent = this.value + ' / day'">
+                </div>
+
+                @if (!string.IsNullOrEmpty(ch.YouTubeChannelId))
+                {
+                    <div class="d-flex align-items-center gap-1 text-success" style="font-size:.8rem">
+                        <i class="bi bi-youtube"></i>
+                        <span>YouTube Connected</span>
+                    </div>
+                }
+                else
+                {
+                    <a asp-action="ConnectYouTube" asp-route-id="@ch.Id"
+                       class="btn btn-sm btn-outline-danger w-100">
+                        <i class="bi bi-youtube me-1"></i>Connect YouTube
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-collection-play display-1 text-muted"></i>
+            <p class="mt-3 text-muted">No channels yet. Create your first channel to get started.</p>
+            <a asp-action="Create" class="btn btn-primary mt-2">
+                <i class="bi bi-plus-lg me-2"></i>Create Channel
+            </a>
+        </div>
+    </div>
+}
+</div>
+
+@section Scripts {
+<script>
+let debounceTimers = {};
+document.querySelectorAll('.daily-target-slider').forEach(slider => {
+    slider.addEventListener('change', function () {
+        const channelId = this.dataset.channelId;
+        clearTimeout(debounceTimers[channelId]);
+        debounceTimers[channelId] = setTimeout(async () => {
+            const res = await fetch('/Channels/UpdateDailyTarget', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channelId: parseInt(channelId), videosPerDay: parseInt(this.value) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Daily target updated to ${data.dailyTarget} videos/day`, 'success');
+            }
+        }, 600);
+    });
+});
+</script>
+}
+
+@functions {
+    string PlatformClass(HgermanContentFactory.Core.Enums.PublishPlatform p) => p switch {
+        HgermanContentFactory.Core.Enums.PublishPlatform.YouTube   => "bg-danger",
+        HgermanContentFactory.Core.Enums.PublishPlatform.Instagram => "bg-purple",
+        _ => "bg-dark"
+    };
+}

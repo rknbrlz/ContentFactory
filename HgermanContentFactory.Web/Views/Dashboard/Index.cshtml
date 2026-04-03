@@ -1,0 +1,267 @@
+@model HgermanContentFactory.Core.DTOs.DashboardStatsDto
+@{ ViewData["Title"] = "Dashboard"; }
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-2">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-collection-play-fill"></i></div>
+            <div class="kpi-value">@Model.TotalChannels</div>
+            <div class="kpi-label">Channels</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-2">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-success bg-opacity-10 text-success"><i class="bi bi-camera-video-fill"></i></div>
+            <div class="kpi-value">@Model.PublishedToday</div>
+            <div class="kpi-label">Published Today</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-2">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-hourglass-split"></i></div>
+            <div class="kpi-value">@Model.PendingVideos</div>
+            <div class="kpi-label">Pending</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-2">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-info bg-opacity-10 text-info"><i class="bi bi-eye-fill"></i></div>
+            <div class="kpi-value">@(Model.TotalViews > 1000000 ? $"{Model.TotalViews/1000000.0:F1}M" : Model.TotalViews > 1000 ? $"{Model.TotalViews/1000.0:F0}K" : Model.TotalViews.ToString())</div>
+            <div class="kpi-label">Total Views</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-2">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-purple bg-opacity-10 text-purple"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="kpi-value">@Model.TrendingTopics</div>
+            <div class="kpi-label">Active Trends</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-2">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-megaphone-fill"></i></div>
+            <div class="kpi-value">@Model.ActiveCampaigns</div>
+            <div class="kpi-label">Campaigns</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Weekly Chart -->
+    <div class="col-xl-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Weekly Publish Activity</span>
+                <a asp-controller="Videos" asp-action="Generate" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Generate Video
+                </a>
+            </div>
+            <div class="card-body">
+                <canvas id="weeklyChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Trends -->
+    <div class="col-xl-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-fire me-2 text-danger"></i>Top Trends</span>
+                <a asp-controller="Trends" asp-action="Index" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    @foreach (var t in Model.TopTrends.Take(8))
+                    {
+                        <li class="list-group-item d-flex align-items-center gap-3 py-2 px-3">
+                            <div class="trend-score @TrendScoreClass(t.TrendScore)">@((int)t.TrendScore)</div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-truncate small fw-semibold">@t.Title</div>
+                                <div class="text-muted" style="font-size:.7rem">@t.Language · @t.Niche</div>
+                            </div>
+                            <span class="badge @TrendStatusBadge(t.Status)">@t.Status</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Channel Grid -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-collection-play me-2 text-primary"></i>Channel Status</span>
+                <a asp-controller="Channels" asp-action="Create" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus-lg me-1"></i>New Channel
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Channel</th>
+                                <th>Language</th>
+                                <th>Niche</th>
+                                <th>Platform</th>
+                                <th>Today's Progress</th>
+                                <th>Views</th>
+                                <th>Subscribers</th>
+                                <th>YouTube</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ch in Model.ChannelSummaries)
+                            {
+                                var pct = ch.DailyTarget > 0 ? (int)(ch.PublishedToday * 100.0 / ch.DailyTarget) : 0;
+                                <tr>
+                                    <td class="fw-semibold">@ch.ChannelName</td>
+                                    <td><span class="badge bg-secondary">@ch.Language</span></td>
+                                    <td><span class="badge bg-dark">@ch.Niche</span></td>
+                                    <td><span class="badge @PlatformBadge(ch.Platform)">@ch.Platform</span></td>
+                                    <td style="min-width:160px">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height:6px">
+                                                <div class="progress-bar @(pct >= 100 ? "bg-success" : "bg-primary")"
+                                                     style="width:@Math.Min(pct,100)%"></div>
+                                            </div>
+                                            <small class="text-muted">@ch.PublishedToday/@ch.DailyTarget</small>
+                                        </div>
+                                    </td>
+                                    <td>@(ch.Views > 1000 ? $"{ch.Views/1000.0:F0}K" : ch.Views.ToString())</td>
+                                    <td>@(ch.Subscribers > 1000 ? $"{ch.Subscribers/1000.0:F0}K" : ch.Subscribers.ToString())</td>
+                                    <td>
+                                        @if (ch.IsAuthenticated)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check2"></i> Connected</span>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Channels" asp-action="ConnectYouTube"
+                                               asp-route-id="@ch.ChannelId"
+                                               class="badge bg-danger text-decoration-none">
+                                                <i class="bi bi-youtube me-1"></i>Connect
+                                            </a>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-controller="Videos" asp-action="Generate"
+                                           asp-route-channelId="@ch.ChannelId"
+                                           class="btn btn-xs btn-outline-primary">
+                                            <i class="bi bi-magic"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Videos -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history me-2 text-info"></i>Recent Videos</span>
+                <a asp-controller="Videos" asp-action="Index" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Channel</th>
+                                <th>Language</th>
+                                <th>Status</th>
+                                <th>Views</th>
+                                <th>Created</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var v in Model.RecentVideos)
+                            {
+                                <tr>
+                                    <td style="max-width:280px" class="text-truncate">@v.Title</td>
+                                    <td>@v.ChannelName</td>
+                                    <td><span class="badge bg-secondary">@v.Language</span></td>
+                                    <td><span class="badge @StatusBadge(v.Status)">@v.StatusName</span></td>
+                                    <td>@v.Views.ToString("N0")</td>
+                                    <td><small class="text-muted">@v.CreatedAt.ToString("MMM dd, HH:mm")</small></td>
+                                    <td>
+                                        @if (v.YouTubeUrl != null)
+                                        {
+                                            <a href="@v.YouTubeUrl" target="_blank" class="btn btn-xs btn-outline-danger">
+                                                <i class="bi bi-youtube"></i>
+                                            </a>
+                                        }
+                                        <a asp-controller="Videos" asp-action="Details"
+                                           asp-route-id="@v.Id" class="btn btn-xs btn-outline-secondary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeeklyChart.Select(x => x.Date)));
+const data   = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeeklyChart.Select(x => x.Count)));
+
+new Chart(document.getElementById('weeklyChart'), {
+    type: 'bar',
+    data: {
+        labels,
+        datasets: [{
+            label: 'Videos Published',
+            data,
+            backgroundColor: 'rgba(13,110,253,0.7)',
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+    }
+});
+</script>
+}
+
+@functions {
+    string TrendScoreClass(double s) => s >= 80 ? "trend-score-high" : s >= 50 ? "trend-score-mid" : "trend-score-low";
+    string TrendStatusBadge(HgermanContentFactory.Core.Enums.TrendStatus s) => s switch {
+        HgermanContentFactory.Core.Enums.TrendStatus.Rising   => "bg-success",
+        HgermanContentFactory.Core.Enums.TrendStatus.Peak     => "bg-warning text-dark",
+        HgermanContentFactory.Core.Enums.TrendStatus.Declining=> "bg-secondary",
+        _ => "bg-info text-dark"
+    };
+    string StatusBadge(HgermanContentFactory.Core.Enums.VideoStatus s) => s switch {
+        HgermanContentFactory.Core.Enums.VideoStatus.Published  => "bg-success",
+        HgermanContentFactory.Core.Enums.VideoStatus.Scheduled  => "bg-info text-dark",
+        HgermanContentFactory.Core.Enums.VideoStatus.Rendered   => "bg-primary",
+        HgermanContentFactory.Core.Enums.VideoStatus.Failed     => "bg-danger",
+        HgermanContentFactory.Core.Enums.VideoStatus.Cancelled  => "bg-secondary",
+        _ => "bg-warning text-dark"
+    };
+    string PlatformBadge(string p) => p switch {
+        "YouTube"   => "bg-danger",
+        "Instagram" => "bg-purple",
+        _           => "bg-dark"
+    };
+}
