@@ -7,7 +7,8 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h4 class="mb-0 fw-bold">Videos
+    <h4 class="mb-0 fw-bold">
+        Videos
         <span class="badge bg-secondary ms-2" style="font-size:.7rem">@ViewBag.Total total</span>
     </h4>
     <div class="d-flex gap-2">
@@ -65,7 +66,8 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th width="40%">Title</th>
+                        <th width="5%">#ID</th>
+                        <th width="38%">Title</th>
                         <th>Channel</th>
                         <th>Lang</th>
                         <th>Status</th>
@@ -79,7 +81,10 @@
                     {
                         <tr id="row_@v.Id">
                             <td>
-                                <div class="text-truncate" style="max-width:350px" title="@v.Title">@v.Title</div>
+                                <span class="text-muted small fw-semibold">#@v.Id</span>
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width:320px" title="@v.Title">@v.Title</div>
                                 @if (v.TrendTopic != null)
                                 {
                                     <small class="text-muted"><i class="bi bi-fire text-danger"></i> @v.TrendTopic.Title</small>
@@ -91,7 +96,7 @@
                                 <span class="badge @StatusBadge(v.Status)" id="status_@v.Id">@v.Status</span>
                             </td>
                             <td>@v.Views.ToString("N0")</td>
-                            <td><small class="text-muted">@v.CreatedAt.ToString("MM/dd HH:mm")</small></td>
+                            <td><small class="text-muted">@v.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small></td>
                             <td>
                                 <div class="d-flex gap-1">
                                     <a asp-action="Details" asp-route-id="@v.Id"
@@ -113,7 +118,7 @@
                                         </a>
                                     }
                                     @if (v.Status is HgermanContentFactory.Core.Enums.VideoStatus.Pending
-                                              or HgermanContentFactory.Core.Enums.VideoStatus.ScriptReady)
+                                                                    or HgermanContentFactory.Core.Enums.VideoStatus.ScriptReady)
                                     {
                                         <form asp-action="Cancel" asp-route-id="@v.Id" method="post"
                                               onsubmit="return confirm('Cancel this video?')" class="d-inline">
@@ -194,53 +199,54 @@
 </div>
 
 @section Scripts {
-<script>
-function showBulkModal() {
-    new bootstrap.Modal(document.getElementById('bulkModal')).show();
-}
+    <script>
+        function showBulkModal() {
+            new bootstrap.Modal(document.getElementById('bulkModal')).show();
+        }
 
-async function runBulkGenerate() {
-    const channelId   = parseInt(document.getElementById('bulkChannelId').value);
-    const count       = parseInt(document.getElementById('bulkCount').value);
-    const autoPublish = document.getElementById('bulkAutoPublish').checked;
+        async function runBulkGenerate() {
+            const channelId = parseInt(document.getElementById('bulkChannelId').value);
+            const count = parseInt(document.getElementById('bulkCount').value);
+            const autoPublish = document.getElementById('bulkAutoPublish').checked;
 
-    bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
-    showToast(`Generating ${count} video(s)...`, 'info');
+            bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+            showToast(`Generating ${count} video(s)...`, 'info');
 
-    const res  = await fetch('/Videos/GenerateBulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelId, count, autoPublish })
-    });
-    const data = await res.json();
-    const ok   = data.results.filter(r => r.success).length;
-    showToast(`Generated ${ok}/${count} videos successfully.`, ok > 0 ? 'success' : 'danger');
-    if (ok > 0) setTimeout(() => location.reload(), 1500);
-}
+            const res = await fetch('/Videos/GenerateBulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channelId, count, autoPublish })
+            });
 
-async function publishVideo(videoId) {
-    showToast('Publishing to YouTube...', 'info');
-    const res  = await fetch(`/Videos/Publish/${videoId}`, { method: 'POST' });
-    const data = await res.json();
-    if (data.success) {
-        document.getElementById(`status_${videoId}`).className = 'badge bg-success';
-        document.getElementById(`status_${videoId}`).textContent = 'Published';
-        showToast('Published successfully!', 'success');
-    } else {
-        showToast('Publish failed: ' + (data.error ?? 'unknown error'), 'danger');
-    }
-}
-</script>
+            const data = await res.json();
+            const ok = data.results.filter(r => r.success).length;
+            showToast(`Generated ${ok}/${count} videos successfully.`, ok > 0 ? 'success' : 'danger');
+            if (ok > 0) setTimeout(() => location.reload(), 1500);
+        }
+
+        async function publishVideo(videoId) {
+            showToast('Publishing to YouTube...', 'info');
+            const res = await fetch(`/Videos/Publish/${videoId}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById(`status_${videoId}`).className = 'badge bg-success';
+                document.getElementById(`status_${videoId}`).textContent = 'Published';
+                showToast('Published successfully!', 'success');
+            } else {
+                showToast('Publish failed: ' + (data.error ?? 'unknown error'), 'danger');
+            }
+        }
+    </script>
 }
 
 @functions {
-    string StatusBadge(HgermanContentFactory.Core.Enums.VideoStatus s) => s switch {
-        HgermanContentFactory.Core.Enums.VideoStatus.Published  => "bg-success",
-        HgermanContentFactory.Core.Enums.VideoStatus.Scheduled  => "bg-info text-dark",
-        HgermanContentFactory.Core.Enums.VideoStatus.Rendered   => "bg-primary",
-        HgermanContentFactory.Core.Enums.VideoStatus.ScriptReady=> "bg-info text-dark",
-        HgermanContentFactory.Core.Enums.VideoStatus.Failed     => "bg-danger",
-        HgermanContentFactory.Core.Enums.VideoStatus.Cancelled  => "bg-secondary",
+    string StatusBadge(HgermanContentFactory.Core.Enums.VideoStatus s) => s switch
+    {
+        HgermanContentFactory.Core.Enums.VideoStatus.Published => "bg-success",
+        HgermanContentFactory.Core.Enums.VideoStatus.Scheduled => "bg-info text-dark",
+        HgermanContentFactory.Core.Enums.VideoStatus.Rendered => "bg-primary",
+        HgermanContentFactory.Core.Enums.VideoStatus.ScriptReady => "bg-info text-dark",
+        HgermanContentFactory.Core.Enums.VideoStatus.Failed => "bg-danger",
         _ => "bg-warning text-dark"
     };
 }

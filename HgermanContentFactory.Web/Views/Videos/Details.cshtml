@@ -1,6 +1,8 @@
 @using HgermanContentFactory.Core.Entities
 @model CF_Video
-@{ ViewData["Title"] = "Video Details"; }
+@{
+    ViewData["Title"] = "Video Details";
+}
 
 <div class="row g-4">
     <div class="col-xl-8">
@@ -11,36 +13,50 @@
             </div>
             <div class="card-body">
                 <dl class="row mb-0">
+                    <dt class="col-4 text-muted">Video ID</dt>
+                    <dd class="col-8"><span class="badge bg-dark">#@Model.Id</span></dd>
+
                     <dt class="col-4 text-muted">Channel</dt>
                     <dd class="col-8">@Model.Channel?.Name</dd>
+
                     <dt class="col-4 text-muted">Language</dt>
                     <dd class="col-8"><span class="badge bg-secondary">@Model.Language</span></dd>
+
                     <dt class="col-4 text-muted">Niche</dt>
                     <dd class="col-8"><span class="badge bg-dark">@Model.Niche</span></dd>
+
+                    <dt class="col-4 text-muted">Created</dt>
+                    <dd class="col-8"><small class="text-muted">@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small></dd>
+
                     @if (Model.TrendTopic != null)
                     {
                         <dt class="col-4 text-muted">Trend Topic</dt>
                         <dd class="col-8"><i class="bi bi-fire text-danger me-1"></i>@Model.TrendTopic.Title</dd>
                     }
+
                     @if (Model.ScheduledAt.HasValue)
                     {
                         <dt class="col-4 text-muted">Scheduled At</dt>
-                        <dd class="col-8">@Model.ScheduledAt.Value.ToString("MMM dd, yyyy HH:mm") UTC</dd>
+                        <dd class="col-8">@Model.ScheduledAt.Value.ToString("dd.MM.yyyy HH:mm")</dd>
                     }
+
                     @if (Model.PublishedAt.HasValue)
                     {
                         <dt class="col-4 text-muted">Published At</dt>
-                        <dd class="col-8">@Model.PublishedAt.Value.ToString("MMM dd, yyyy HH:mm") UTC</dd>
+                        <dd class="col-8">@Model.PublishedAt.Value.ToString("dd.MM.yyyy HH:mm")</dd>
                     }
+
                     @if (Model.YouTubeVideoId != null)
                     {
                         <dt class="col-4 text-muted">YouTube</dt>
                         <dd class="col-8">
-                            <a href="https://youtu.be/@Model.YouTubeVideoId" target="_blank" class="btn btn-sm btn-outline-danger">
+                            <a href="https://youtu.be/@Model.YouTubeVideoId" target="_blank"
+                               class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-youtube me-1"></i>Watch on YouTube
                             </a>
                         </dd>
                     }
+
                     @if (Model.DurationSeconds > 0)
                     {
                         <dt class="col-4 text-muted">Duration</dt>
@@ -148,44 +164,45 @@
 </div>
 
 @section Scripts {
-<script>
-function copyScript() {
-    navigator.clipboard.writeText(document.getElementById('scriptText').textContent);
-    showToast('Script copied to clipboard!', 'success');
-}
+    <script>
+        function copyScript() {
+            navigator.clipboard.writeText(document.getElementById('scriptText').textContent);
+            showToast('Script copied to clipboard!', 'success');
+        }
 
-async function publishVideo(id) {
-    if (!confirm('Publish this video to YouTube?')) return;
-    showToast('Publishing...', 'info');
-    const res  = await fetch(`/Videos/Publish/${id}`, { method: 'POST' });
-    const data = await res.json();
-    if (data.success) {
-        showToast('Published! Refreshing...', 'success');
-        setTimeout(() => location.reload(), 1200);
-    } else {
-        showToast('Failed: ' + (data.error ?? 'unknown error'), 'danger');
-    }
-}
+        async function publishVideo(id) {
+            if (!confirm('Publish this video to YouTube?')) return;
+            showToast('Publishing...', 'info');
+            const res = await fetch(`/Videos/Publish/${id}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Published! Refreshing...', 'success');
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                showToast('Failed: ' + (data.error ?? 'unknown error'), 'danger');
+            }
+        }
 
-async function renderVideo(id) {
-    showToast('Rendering video...', 'info');
-    const res  = await fetch(`/Videos/Render/${id}`, { method: 'POST' });
-    const data = await res.json();
-    if (data.success) {
-        showToast('Rendered! Refreshing...', 'success');
-        setTimeout(() => location.reload(), 1200);
-    }
-}
-</script>
+        async function renderVideo(id) {
+            showToast('Rendering video...', 'info');
+            const res = await fetch(`/Videos/Render/${id}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Rendered! Refreshing...', 'success');
+                setTimeout(() => location.reload(), 1200);
+            }
+        }
+    </script>
 }
 
 @functions {
-    string StatusBadge(HgermanContentFactory.Core.Enums.VideoStatus s) => s switch {
-        HgermanContentFactory.Core.Enums.VideoStatus.Published  => "bg-success",
-        HgermanContentFactory.Core.Enums.VideoStatus.Scheduled  => "bg-info text-dark",
-        HgermanContentFactory.Core.Enums.VideoStatus.Rendered   => "bg-primary",
-        HgermanContentFactory.Core.Enums.VideoStatus.Failed     => "bg-danger",
-        HgermanContentFactory.Core.Enums.VideoStatus.Cancelled  => "bg-secondary",
+    string StatusBadge(HgermanContentFactory.Core.Enums.VideoStatus s) => s switch
+    {
+        HgermanContentFactory.Core.Enums.VideoStatus.Published => "bg-success",
+        HgermanContentFactory.Core.Enums.VideoStatus.Scheduled => "bg-info text-dark",
+        HgermanContentFactory.Core.Enums.VideoStatus.Rendered => "bg-primary",
+        HgermanContentFactory.Core.Enums.VideoStatus.Failed => "bg-danger",
+        HgermanContentFactory.Core.Enums.VideoStatus.Cancelled => "bg-secondary",
         _ => "bg-warning text-dark"
     };
 }
