@@ -97,8 +97,10 @@ function renderTrends(trends, langName) {
     const container = document.getElementById('trend-cards');
     container.innerHTML = trends.map((t, i) => `
         <div class="col-md-6 col-lg-4">
-            <div class="card h-100 p-3 trend-card" style="cursor:pointer"
-                 onclick="useForContent('${escHtml(t.seriesName)}', '${escHtml(t.sceneOrEmotion)}')">
+            <div class="card h-100 p-3 trend-card"
+                 style="cursor:pointer"
+                 data-series="${escAttr(t.seriesName)}"
+                 data-scene="${escAttr(t.sceneOrEmotion)}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <span class="badge bg-secondary">#${i+1}</span>
                     <span class="badge ${scoreColor(t.trendScore)}">${Math.round(t.trendScore)}</span>
@@ -113,13 +115,20 @@ function renderTrends(trends, langName) {
                     <div class="text-muted" style="font-size:.7rem">${escHtml(t.keywords)}</div>
                 </div>
                 <div class="mt-2 text-center">
-                    <span class="badge bg-primary" style="font-size:.65rem">
+                    <span class="badge bg-primary" style="font-size:.65rem; pointer-events:none">
                         <i class="bi bi-magic"></i> Click to generate content
                     </span>
                 </div>
             </div>
         </div>
     `).join('');
+
+    // Attach click handlers via event delegation — avoids inline onclick issues
+    container.querySelectorAll('.trend-card').forEach(card => {
+        card.addEventListener('click', function() {
+            useForContent(this.dataset.series, this.dataset.scene);
+        });
+    });
 }
 
 function scoreColor(s) {
@@ -135,7 +144,12 @@ function useForContent(series, scene) {
 
 function escHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function escAttr(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 </script>
 }
